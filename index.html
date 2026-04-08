@@ -1,633 +1,292 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klavera Pro — Dein Klavier-Lehrer</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --ink:#0d0d0d;--ink2:#3a3a3a;--ink3:#7a7a7a;--ink4:#b0b0b0;
-  --paper:#faf8f4;--paper2:#f2efe8;--paper3:#e8e4da;
-  --gold:#c9a84c;--gold2:#e8c96a;--gold3:#f5e4a8;
-  --ivory:#fffff0;--ebony:#1a1a1a;
-  --red:#c0392b;--green:#27ae60;--blue:#2980b9;
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+:root {
+  --primary: #3498db; --success: #2ecc71; --error: #e74c3c;
+  --dark: #2c3e50; --light: #ecf0f1; --gold: #f1c40f;
 }
-body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);padding:0}
+*{margin:0;padding:0;box-sizing:border-box}
+body { font-family: 'DM Sans', sans-serif; background: #f5f7fa; color: var(--dark); line-height: 1.6; }
 
-.studio{display:flex;flex-direction:column;gap:16px;padding:24px}
+.container { max-width: 900px; margin: 0 auto; padding: 20px; }
 
-/* Header */
-.header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
-.logo{font-family:'Playfair Display',serif;font-size:20px;color:var(--ink);font-weight:700}
-.logo span{font-size:13px;font-weight:400;color:var(--ink3);margin-left:8px}
+/* Header & Navigation */
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 25px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+.logo { font-weight: 700; font-size: 22px; color: var(--primary); }
+select { padding: 8px; border-radius: 8px; border: 1px solid #ddd; font-family: inherit; cursor: pointer; }
 
-/* Mic panel */
-.mic-panel{background:var(--paper);border:1.5px solid var(--paper3);border-radius:14px;padding:20px}
-.mic-panel.active{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.12)}
-.panel-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.big-btn{padding:11px 24px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;border:1.5px solid;font-family:'DM Sans',sans-serif;transition:all .15s}
-.btn-start{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-.btn-start:hover{background:var(--ink2)}
-.btn-stop{background:var(--red);color:#fff;border-color:var(--red)}
-.status-chip{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink3);padding:8px 14px;background:var(--paper2);border-radius:20px}
-.mic-dot{width:9px;height:9px;border-radius:50%;background:var(--ink4);flex-shrink:0}
-.mic-dot.active{background:var(--green);animation:pulse 1.2s infinite}
-.mic-dot.detecting{background:var(--gold);animation:pulse .8s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.75)}}
+/* Main Display */
+.display-card { background: var(--dark); color: white; border-radius: 20px; padding: 30px; text-align: center; margin-bottom: 20px; position: relative; overflow: hidden; }
+.current-note { font-size: 80px; font-weight: 700; color: var(--gold); margin: 10px 0; }
+.target-info { font-size: 18px; opacity: 0.9; }
+.feedback { height: 24px; font-size: 16px; margin-top: 10px; font-weight: 500; }
+.feedback.hit { color: var(--success); }
+.feedback.miss { color: var(--error); }
 
-/* Waveform canvas */
-.waveform-wrap{background:var(--ebony);border-radius:10px;overflow:hidden;margin-top:14px;position:relative}
-canvas#waveform{display:block;width:100%;height:60px}
-.waveform-label{position:absolute;top:6px;left:10px;font-size:10px;color:#555;letter-spacing:.8px;text-transform:uppercase}
+/* Stats Row */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.stat-box { background: white; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.stat-label { font-size: 12px; text-transform: uppercase; color: #7f8c8d; }
+.stat-val { font-size: 20px; font-weight: 700; }
 
-/* Detected note display */
-.note-display{background:var(--ink);border-radius:14px;padding:20px 24px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
-.big-note{font-family:'Playfair Display',serif;font-size:64px;font-weight:700;color:var(--gold2);line-height:1;min-width:80px;text-align:center;transition:all .15s}
-.big-note.hit{color:var(--green);transform:scale(1.08)}
-.big-note.miss{color:var(--red)}
-.note-details{flex:1}
-.freq-display{font-size:13px;color:#666;margin-bottom:4px}
-.freq-display span{color:var(--gold3);font-weight:500}
-.confidence-row{display:flex;align-items:center;gap:10px;margin-top:8px}
-.conf-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.8px}
-.conf-bar{flex:1;height:5px;background:#333;border-radius:3px;overflow:hidden}
-.conf-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .15s}
-.conf-pct{font-size:12px;color:#999;min-width:32px;text-align:right}
-.octave-badge{background:#222;color:#888;font-size:11px;padding:3px 10px;border-radius:8px}
+/* Piano Styling */
+.piano-container { background: white; padding: 30px 10px; border-radius: 20px; overflow-x: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+.piano { display: flex; position: relative; width: fit-content; margin: 0 auto; user-select: none; }
+.wk { width: 45px; height: 180px; background: white; border: 1px solid #ccc; border-radius: 0 0 5px 5px; position: relative; z-index: 1; transition: background 0.2s; }
+.bk { width: 30px; height: 110px; background: #333; position: absolute; top: 0; z-index: 2; border-radius: 0 0 3px 3px; transition: background 0.2s; }
 
-/* Target & feedback */
-.target-panel{background:var(--paper);border:1.5px solid var(--paper3);border-radius:14px;padding:18px 20px}
-.target-row{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
-.target-note-big{font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:var(--ink);line-height:1}
-.target-info{flex:1}
-.target-label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--ink4);margin-bottom:4px}
-.feedback-line{font-size:14px;color:var(--ink2);margin-top:8px;min-height:20px;transition:color .2s}
-.feedback-line.correct{color:var(--green)}
-.feedback-line.wrong{color:var(--red)}
+/* Feedback Classes */
+.key-target { background: #d6eaf8 !important; border-bottom: 5px solid var(--primary); }
+.key-hit { background: var(--success) !important; transform: translateY(2px); }
+.key-miss { background: var(--error) !important; }
+.bk.key-target { background: var(--primary) !important; }
 
-/* Score row */
-.score-row{display:flex;gap:12px;flex-wrap:wrap}
-.score-card{background:var(--paper);border:1px solid var(--paper3);border-radius:10px;padding:14px 18px;flex:1;min-width:100px}
-.score-card .sc-label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--ink4);margin-bottom:6px}
-.score-card .sc-val{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--ink)}
-.score-card .sc-sub{font-size:11px;color:var(--ink4);margin-top:1px}
-
-/* Piano keyboard */
-.piano-section{background:var(--paper);border:1.5px solid var(--paper3);border-radius:14px;padding:16px 20px}
-.piano-wrap{overflow-x:auto;margin-top:10px}
-.piano{display:flex;position:relative;height:130px;width:fit-content}
-.wk{width:42px;height:124px;background:var(--ivory);border:1.5px solid #d0cfc8;border-radius:0 0 5px 5px;cursor:pointer;position:relative;transition:background .08s;flex-shrink:0}
-.wk.active{background:var(--gold3) !important;border-color:var(--gold)}
-.wk.target-key{background:#fff3cc;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
-.wk.hit-key{background:#d5f5e3;border-color:var(--green)}
-.wk.miss-key{background:#fde8e8;border-color:var(--red)}
-.key-label{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--ink4);font-weight:500}
-.bk{width:27px;height:80px;background:var(--ebony);border-radius:0 0 4px 4px;position:absolute;top:0;z-index:2;cursor:pointer;transition:background .08s}
-.bk.active{background:#c9a84c}
-.bk.target-key{background:var(--gold)}
-
-/* Lesson sequence */
-.sequence-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.seq-pill{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;border:1.5px solid var(--paper3);color:var(--ink4);background:var(--paper2);transition:all .2s}
-.seq-pill.current{background:var(--gold);border-color:var(--gold);color:var(--ink);box-shadow:0 0 8px rgba(201,168,76,.4)}
-.seq-pill.done{background:var(--green);border-color:var(--green);color:#fff}
-.seq-pill.miss{background:var(--red);border-color:var(--red);color:#fff}
-
-/* Tip box */
-.tip-box{background:var(--paper2);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:var(--ink3);line-height:1.55}
-.tip-box strong{color:var(--ink2);font-weight:500}
+/* Controls */
+.controls { text-align: center; margin-top: 20px; }
+.btn { padding: 12px 30px; border-radius: 30px; border: none; font-weight: 700; cursor: pointer; transition: 0.3s; font-size: 16px; }
+.btn-start { background: var(--primary); color: white; }
+.btn-start:hover { background: #2980b9; transform: scale(1.05); }
+.btn-stop { background: var(--error); color: white; }
 </style>
 </head>
 <body>
-<div class="studio">
 
-  <div class="header">
-    <div class="logo">Klavera <span>— Live Pitch Detection</span></div>
-    <div id="lesson-selector" style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="big-btn" style="background:transparent;border-color:var(--paper3);color:var(--ink2);font-size:12px;padding:7px 14px" onclick="setLesson(0)">C Major Scale</button>
-      <button class="big-btn" style="background:transparent;border-color:var(--paper3);color:var(--ink2);font-size:12px;padding:7px 14px" onclick="setLesson(1)">Für Elise Intro</button>
-      <button class="big-btn" style="background:transparent;border-color:var(--paper3);color:var(--ink2);font-size:12px;padding:7px 14px" onclick="setLesson(2)">Freie Übung</button>
-    </div>
+<div class="container">
+  <header>
+    <div class="logo">Klavera <span style="font-weight:300; font-size:14px; color:#777">Simply Play</span></div>
+    <select id="songSelect" onchange="loadSong(this.value)">
+      <option value="0">C-Dur Tonleiter</option>
+      <option value="1">Für Elise (Intro)</option>
+      <option value="2">Ode an die Freude</option>
+      <option value="3">Jingle Bells</option>
+      <option value="4">Hänschen Klein</option>
+    </select>
+  </header>
+
+  <div class="display-card">
+    <div class="target-info">Nächste Note: <strong id="nextNoteText">C4</strong></div>
+    <div class="current-note" id="detectedNote">—</div>
+    <div class="feedback" id="feedbackText">Klicke Start und spiele los!</div>
   </div>
 
-  <!-- Mic control -->
-  <div class="mic-panel" id="mic-panel">
-    <div class="panel-row">
-      <button class="big-btn btn-start" id="mic-btn" onclick="toggleMic()">🎤 Mikrofon starten</button>
-      <div class="status-chip"><div class="mic-dot" id="mic-dot"></div><span id="mic-status-text">Mikrofon inaktiv</span></div>
-      <div class="status-chip" id="noise-chip" style="display:none"><span id="noise-text">Rauschen: —</span></div>
-    </div>
-    <div class="waveform-wrap" style="display:none" id="waveform-wrap">
-      <div class="waveform-label">Live Signal</div>
-      <canvas id="waveform" height="60"></canvas>
-    </div>
-    <div class="tip-box" style="margin-top:12px">
-      <strong>So funktioniert es:</strong> Klicke "Mikrofon starten", erlaube den Zugriff, und spiele dann einen Ton auf deinem Klavier. Die App erkennt die Tonhöhe in Echtzeit mit dem <strong>YIN-Algorithmus</strong> — optimiert für Klavier-Frequenzen (27 Hz – 4200 Hz).
-    </div>
+  <div class="stats">
+    <div class="stat-box"><div class="stat-label">Treffer</div><div class="stat-val" id="statHits">0</div></div>
+    <div class="stat-box"><div class="stat-label">Genauigkeit</div><div class="stat-val" id="statAcc">0%</div></div>
+    <div class="stat-box"><div class="stat-label">Sequenz</div><div class="stat-val" id="statProg">0/0</div></div>
+    <div class="stat-box"><div class="stat-label">Frequenz</div><div class="stat-val" id="statFreq">0 Hz</div></div>
   </div>
 
-  <!-- Detected note -->
-  <div class="note-display">
-    <div class="big-note" id="big-note">—</div>
-    <div class="note-details">
-      <div class="freq-display">Frequenz: <span id="freq-val">— Hz</span> &nbsp;|&nbsp; MIDI: <span id="midi-val">—</span></div>
-      <div class="octave-badge" id="octave-badge" style="display:inline-block;margin-top:4px">Oktave: —</div>
-      <div class="confidence-row">
-        <span class="conf-label">Sicherheit</span>
-        <div class="conf-bar"><div class="conf-fill" id="conf-fill" style="width:0%"></div></div>
-        <span class="conf-pct" id="conf-pct">0%</span>
-      </div>
-    </div>
+  <div class="piano-container">
+    <div class="piano" id="piano"></div>
   </div>
 
-  <!-- Target note & feedback -->
-  <div class="target-panel" id="target-panel">
-    <div class="target-row">
-      <div>
-        <div class="target-label">Erwartete Note</div>
-        <div class="target-note-big" id="target-note">C4</div>
-      </div>
-      <div class="target-info">
-        <div style="font-size:12px;color:var(--ink4);margin-bottom:6px">Sequenz</div>
-        <div class="sequence-row" id="sequence-row"></div>
-      </div>
-    </div>
-    <div class="feedback-line" id="feedback-line">Spiele die markierte Note auf deinem Klavier...</div>
+  <div class="controls">
+    <button class="btn btn-start" id="toggleBtn" onclick="toggleMic()">🎤 Training Starten</button>
   </div>
-
-  <!-- Scores -->
-  <div class="score-row">
-    <div class="score-card"><div class="sc-label">Treffer</div><div class="sc-val" id="sc-hits">0</div><div class="sc-sub">korrekte Noten</div></div>
-    <div class="score-card"><div class="sc-label">Genauigkeit</div><div class="sc-val" id="sc-acc">—</div><div class="sc-sub">Trefferquote</div></div>
-    <div class="score-card"><div class="sc-label">Score</div><div class="sc-val" id="sc-score">0</div><div class="sc-sub">von 100</div></div>
-    <div class="score-card"><div class="sc-label">Ges. Versuche</div><div class="sc-val" id="sc-total">0</div><div class="sc-sub">gespielte Noten</div></div>
-  </div>
-
-  <!-- Visual keyboard -->
-  <div class="piano-section">
-    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--ink4)">Visuelle Tastatur — erkannte Note wird hervorgehoben</div>
-    <div class="piano-wrap"><div class="piano" id="piano"></div></div>
-  </div>
-
 </div>
 
 <script>
-// =====================
-// PIANO NOTE DATA
-// =====================
-const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-const A4_FREQ = 440;
-const A4_MIDI = 69;
-
-function freqToMidi(f) {
-  return Math.round(12 * Math.log2(f / A4_FREQ) + A4_MIDI);
-}
-function midiToNote(midi) {
-  if(midi < 0 || midi > 127) return null;
-  return NOTE_NAMES[midi % 12] + Math.floor(midi / 12 - 1);
-}
-function midiToFreq(midi) {
-  return A4_FREQ * Math.pow(2, (midi - A4_MIDI) / 12);
-}
-function noteNameToMidi(name) {
-  // e.g. "C4", "F#3"
-  const m = name.match(/^([A-G]#?)(\d)$/);
-  if(!m) return null;
-  const octave = parseInt(m[2]);
-  const noteIdx = NOTE_NAMES.indexOf(m[1]);
-  return (octave + 1) * 12 + noteIdx;
-}
-
-// =====================
-// LESSONS
-// =====================
-const LESSONS = [
-  {name:'C Dur Tonleiter', notes:['C4','D4','E4','F4','G4','A4','B4','C5']},
-  {name:'Für Elise Intro',  notes:['E5','D#5','E5','D#5','E5','B4','D5','C5','A4']},
-  {name:'Freie Übung',      notes:null},
+const SONGS = [
+  { name: "C-Dur Tonleiter", notes: ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"] },
+  { name: "Für Elise", notes: ["E5", "D#5", "E5", "D#5", "E5", "B4", "D5", "C5", "A4"] },
+  { name: "Ode an die Freude", notes: ["E4", "E4", "F4", "G4", "G4", "F4", "E4", "D4", "C4", "C4", "D4", "E4", "E4", "D4", "D4"] },
+  { name: "Jingle Bells", notes: ["E4", "E4", "E4", "E4", "E4", "E4", "E4", "G4", "C4", "D4", "E4"] },
+  { name: "Hänschen Klein", notes: ["G4", "E4", "E4", "F4", "D4", "D4", "C4", "D4", "E4", "F4", "G4", "G4", "G4"] }
 ];
-let currentLesson = 0;
-let sequence = [...LESSONS[0].notes];
-let seqIndex = 0;
-let hits = 0, misses = 0, totalAttempts = 0;
-let lastDetectedMidi = -1;
-let lastHitTime = 0;
-const HIT_COOLDOWN = 600; // ms
 
-function setLesson(idx) {
-  currentLesson = idx;
-  sequence = LESSONS[idx].notes ? [...LESSONS[idx].notes] : null;
-  seqIndex = 0;
-  hits = 0; misses = 0; totalAttempts = 0;
-  lastDetectedMidi = -1;
-  updateScores();
-  renderSequence();
-  updateTarget();
-  document.querySelectorAll('#lesson-selector .big-btn').forEach((b,i) => {
-    b.style.background = i===idx ? 'var(--ink)' : 'transparent';
-    b.style.color = i===idx ? 'var(--paper)' : 'var(--ink2)';
-    b.style.borderColor = i===idx ? 'var(--ink)' : 'var(--paper3)';
-  });
-  if(!sequence) {
-    document.querySelector('#target-panel').style.opacity = '.5';
-    document.querySelector('#feedback-line').textContent = 'Freie Übung: Spiele was du möchtest — jede Note wird erkannt.';
-  } else {
-    document.querySelector('#target-panel').style.opacity = '1';
-  }
-}
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+let currentSongIdx = 0;
+let currentNoteStep = 0;
+let hits = 0;
+let totalAttempts = 0;
+let isRunning = false;
+let audioCtx, analyser, dataArray;
 
-function renderSequence() {
-  const row = document.querySelector('#sequence-row');
-  if(!sequence) { row.innerHTML = '<span style="font-size:12px;color:var(--ink4)">Keine Sequenz — freies Spielen</span>'; return; }
-  row.innerHTML = sequence.map((n,i) => `<div class="seq-pill ${i===seqIndex?'current':i<seqIndex?'done':''}" id="sp-${i}">${n}</div>`).join('');
-}
-
-function updateTarget() {
-  if(!sequence) return;
-  document.querySelector('#target-note').textContent = sequence[seqIndex] || '✓';
-  highlightTargetKey(sequence[seqIndex]);
-}
-
-function updateScores() {
-  document.querySelector('#sc-hits').textContent = hits;
-  document.querySelector('#sc-total').textContent = totalAttempts;
-  const acc = totalAttempts > 0 ? Math.round(hits/totalAttempts*100) : '—';
-  document.querySelector('#sc-acc').textContent = typeof acc === 'number' ? acc+'%' : acc;
-  document.querySelector('#sc-score').textContent = typeof acc === 'number' ? acc : 0;
-}
-
-// =====================
-// YIN PITCH DETECTION
-// =====================
-function yinDetect(buffer, sampleRate) {
-  const N = buffer.length;
-  const halfN = Math.floor(N / 2);
-  const threshold = 0.15;
-
-  // Step 1: difference function
-  const d = new Float32Array(halfN);
-  for (let tau = 1; tau < halfN; tau++) {
-    let sum = 0;
-    for (let j = 0; j < halfN; j++) {
-      const delta = buffer[j] - buffer[j + tau];
-      sum += delta * delta;
-    }
-    d[tau] = sum;
-  }
-
-  // Step 2: cumulative mean normalized difference
-  const cmnd = new Float32Array(halfN);
-  cmnd[0] = 1;
-  let runningSum = 0;
-  for (let tau = 1; tau < halfN; tau++) {
-    runningSum += d[tau];
-    cmnd[tau] = runningSum === 0 ? 0 : d[tau] * tau / runningSum;
-  }
-
-  // Step 3: find first dip below threshold
-  let tau = -1;
-  for (let t = 2; t < halfN; t++) {
-    if (cmnd[t] < threshold) {
-      while (t + 1 < halfN && cmnd[t + 1] < cmnd[t]) t++;
-      tau = t;
-      break;
+// Piano Generation (Korrigiertes Layout)
+function buildPiano() {
+  const piano = document.getElementById('piano');
+  piano.innerHTML = '';
+  let whiteKeysCount = 0;
+  
+  // Wir bauen 2 Oktaven (C4 bis B5)
+  for (let m = 60; m <= 83; m++) {
+    const noteName = NOTE_NAMES[m % 12];
+    const isBlack = noteName.includes('#');
+    
+    if (!isBlack) {
+      const key = document.createElement('div');
+      key.className = 'wk';
+      key.id = `midi-${m}`;
+      key.dataset.note = noteName + Math.floor(m/12 - 1);
+      key.innerHTML = `<span style="position:absolute; bottom:5px; width:100; text-align:center; font-size:10px; width:100%; color:#999">${key.dataset.note}</span>`;
+      piano.appendChild(key);
+      
+      // Schwarze Taste dazu schieben
+      const nextM = m + 1;
+      if (NOTE_NAMES[nextM % 12] && NOTE_NAMES[nextM % 12].includes('#')) {
+        const bkey = document.createElement('div');
+        bkey.className = 'bk';
+        bkey.id = `midi-${nextM}`;
+        bkey.style.left = `${(whiteKeysCount * 45) + 30}px`;
+        piano.appendChild(bkey);
+      }
+      whiteKeysCount++;
     }
   }
-
-  if (tau === -1) {
-    // No clear pitch found — try absolute minimum
-    let minVal = Infinity, minTau = -1;
-    for (let t = 2; t < halfN; t++) {
-      if (cmnd[t] < minVal) { minVal = cmnd[t]; minTau = t; }
-    }
-    if (minVal > 0.35) return { freq: 0, confidence: 0 };
-    tau = minTau;
-  }
-
-  // Step 4: parabolic interpolation for sub-sample accuracy
-  let betterTau = tau;
-  if (tau > 0 && tau < halfN - 1) {
-    const s0 = cmnd[tau - 1], s1 = cmnd[tau], s2 = cmnd[tau + 1];
-    const denom = 2 * (2 * s1 - s0 - s2);
-    if (Math.abs(denom) > 1e-8) betterTau = tau + (s0 - s2) / denom;
-  }
-
-  const freq = betterTau > 0 ? sampleRate / betterTau : 0;
-  const confidence = tau !== -1 ? Math.max(0, 1 - cmnd[tau]) : 0;
-
-  // Piano range filter: A0 (27.5 Hz) to C8 (4186 Hz)
-  if (freq < 27 || freq > 4200) return { freq: 0, confidence: 0 };
-
-  return { freq, confidence };
+  highlightTarget();
 }
 
-// RMS volume
-function getRMS(buffer) {
-  let sum = 0;
-  for(let i=0;i<buffer.length;i++) sum += buffer[i]*buffer[i];
-  return Math.sqrt(sum/buffer.length);
+function loadSong(idx) {
+  currentSongIdx = idx;
+  currentNoteStep = 0;
+  hits = 0; totalAttempts = 0;
+  updateStats();
+  highlightTarget();
+  document.getElementById('feedbackText').textContent = "Neues Lied geladen. Spiel die markierte Taste!";
 }
 
-// =====================
-// AUDIO ENGINE
-// =====================
-let audioCtx = null, analyserNode = null, micStream = null;
-let rafId = null, running = false;
-let bufferLength = 2048;
-let audioBuffer = new Float32Array(bufferLength);
-let waveBuffer = new Float32Array(bufferLength);
+function highlightTarget() {
+  document.querySelectorAll('.wk, .bk').forEach(k => k.classList.remove('key-target'));
+  const targetNoteName = SONGS[currentSongIdx].notes[currentNoteStep];
+  document.getElementById('nextNoteText').textContent = targetNoteName;
+  
+  const targetMidi = noteToMidi(targetNoteName);
+  const el = document.getElementById(`midi-${targetMidi}`);
+  if(el) el.classList.add('key-target');
+}
+
+function noteToMidi(name) {
+  const m = name.match(/^([A-G]#?)(\d)$/);
+  return (parseInt(m[2]) + 1) * 12 + NOTE_NAMES.indexOf(m[1]);
+}
 
 async function toggleMic() {
-  if(running) { stopMic(); return; }
-  await startMic();
-}
-
-async function startMic() {
+  if (isRunning) {
+    location.reload(); // Einfachster Reset
+    return;
+  }
+  
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
-    });
-    micStream = stream;
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioCtx.createMediaStreamSource(stream);
-    analyserNode = audioCtx.createAnalyser();
-    analyserNode.fftSize = bufferLength * 2;
-    analyserNode.smoothingTimeConstant = 0;
-    source.connect(analyserNode);
-    audioBuffer = new Float32Array(analyserNode.fftSize);
-    waveBuffer = new Float32Array(analyserNode.fftSize);
-    running = true;
-    setMicUI(true);
-    loop();
-  } catch(e) {
-    alert('Mikrofon konnte nicht gestartet werden: ' + e.message + '\n\nBitte Mikrofonzugriff erlauben.');
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    source.connect(analyser);
+    dataArray = new Float32Array(analyser.fftSize);
+    
+    isRunning = true;
+    document.getElementById('toggleBtn').textContent = "⏹ Stoppen";
+    document.getElementById('toggleBtn').className = "btn btn-stop";
+    detectPitch();
+  } catch (err) {
+    alert("Mikrofon-Zugriff verweigert.");
   }
 }
 
-function stopMic() {
-  running = false;
-  if(rafId) cancelAnimationFrame(rafId);
-  if(micStream) micStream.getTracks().forEach(t => t.stop());
-  if(audioCtx) audioCtx.close();
-  setMicUI(false);
-  document.querySelector('#big-note').textContent = '—';
-  document.querySelector('#freq-val').textContent = '— Hz';
-  document.querySelector('#midi-val').textContent = '—';
-  document.querySelector('#conf-fill').style.width = '0%';
-  document.querySelector('#conf-pct').textContent = '0%';
-  clearKeyHighlights();
-}
-
-function setMicUI(active) {
-  const btn = document.querySelector('#mic-btn');
-  const dot = document.querySelector('#mic-dot');
-  const panel = document.querySelector('#mic-panel');
-  const ww = document.querySelector('#waveform-wrap');
-  if(active) {
-    btn.textContent = '⏹ Mikrofon stoppen';
-    btn.className = 'big-btn btn-stop';
-    dot.className = 'mic-dot active';
-    document.querySelector('#mic-status-text').textContent = 'Zuhören...';
-    panel.classList.add('active');
-    ww.style.display = 'block';
-    document.querySelector('#noise-chip').style.display = 'flex';
-  } else {
-    btn.textContent = '🎤 Mikrofon starten';
-    btn.className = 'big-btn btn-start';
-    dot.className = 'mic-dot';
-    document.querySelector('#mic-status-text').textContent = 'Mikrofon inaktiv';
-    panel.classList.remove('active');
-    ww.style.display = 'none';
-    document.querySelector('#noise-chip').style.display = 'none';
+function detectPitch() {
+  if (!isRunning) return;
+  requestAnimationFrame(detectPitch);
+  analyser.getFloatTimeDomainData(dataArray);
+  
+  const pitch = autoCorrelate(dataArray, audioCtx.sampleRate);
+  
+  if (pitch !== -1) {
+    const midi = Math.round(12 * Math.log2(pitch / 440) + 69);
+    const noteName = NOTE_NAMES[midi % 12] + (Math.floor(midi / 12) - 1);
+    
+    document.getElementById('detectedNote').textContent = noteName;
+    document.getElementById('statFreq').textContent = Math.round(pitch) + " Hz";
+    
+    checkNote(midi, noteName);
   }
 }
 
-// =====================
-// DETECTION LOOP
-// =====================
-const MIN_RMS = 0.02; // silence threshold
-let silenceFrames = 0;
-const SILENCE_FRAMES = 8;
-let detectedMidi = -1;
-
-function loop() {
-  if(!running) return;
-  rafId = requestAnimationFrame(loop);
-
-  analyserNode.getFloatTimeDomainData(audioBuffer);
-
-  // Draw waveform
-  drawWaveform(audioBuffer);
-
-  const rms = getRMS(audioBuffer);
-  document.querySelector('#noise-text').textContent = 'Pegel: ' + Math.round(rms * 100) + '%';
-
-  if(rms < MIN_RMS) {
-    silenceFrames++;
-    if(silenceFrames > SILENCE_FRAMES) {
-      // Silence — reset note display gently
-      document.querySelector('#mic-dot').className = 'mic-dot active';
-      detectedMidi = -1;
-    }
-    return;
-  }
-  silenceFrames = 0;
-  document.querySelector('#mic-dot').className = 'mic-dot detecting';
-
-  const { freq, confidence } = yinDetect(audioBuffer, audioCtx.sampleRate);
-
-  if(freq < 27 || confidence < 0.5) return;
-
-  const midi = freqToMidi(freq);
-  if(midi < 21 || midi > 108) return; // outside piano range
-
-  const noteName = midiToNote(midi);
-  if(!noteName) return;
-
-  // Update display
-  document.querySelector('#big-note').textContent = noteName;
-  document.querySelector('#freq-val').textContent = Math.round(freq * 10) / 10 + ' Hz';
-  document.querySelector('#midi-val').textContent = midi;
-  document.querySelector('#octave-badge').textContent = 'Oktave: ' + noteName.slice(-1);
-  const confPct = Math.round(confidence * 100);
-  document.querySelector('#conf-fill').style.width = confPct + '%';
-  document.querySelector('#conf-pct').textContent = confPct + '%';
-
-  // Highlight key
-  highlightKey(noteName);
-
-  // Check against lesson sequence — debounce so one held note = one hit
+let lastCheckTime = 0;
+function checkNote(midi, name) {
   const now = Date.now();
-  if(midi !== lastDetectedMidi && now - lastHitTime > HIT_COOLDOWN) {
-    lastDetectedMidi = midi;
-    lastHitTime = now;
-    checkNote(noteName, midi);
-  }
-}
+  if (now - lastCheckTime < 800) return; // Cooldown gegen Doppelerkennung
 
-// =====================
-// NOTE CHECKING
-// =====================
-function checkNote(noteName, midi) {
-  if(!sequence) {
-    // Free play mode — just show info
-    document.querySelector('#feedback-line').textContent = `Du spielst: ${noteName} (${Math.round(midiToFreq(midi))} Hz)`;
-    document.querySelector('#feedback-line').className = 'feedback-line';
-    return;
-  }
-
-  const target = sequence[seqIndex];
-  const targetMidi = noteNameToMidi(target);
-
-  totalAttempts++;
-
-  if(midi === targetMidi) {
-    // HIT
+  const targetNote = SONGS[currentSongIdx].notes[currentNoteStep];
+  const targetMidi = noteToMidi(targetNote);
+  
+  if (midi === targetMidi) {
+    lastCheckTime = now;
     hits++;
-    document.querySelector('#big-note').className = 'big-note hit';
-    document.querySelector('#feedback-line').textContent = `✓ Richtig! ${noteName} erkannt.`;
-    document.querySelector('#feedback-line').className = 'feedback-line correct';
-    markSeqPill(seqIndex, 'done');
-    flashKey(noteName, 'hit-key');
-    seqIndex++;
-    if(seqIndex >= sequence.length) {
-      // Sequence complete
-      setTimeout(() => {
-        document.querySelector('#feedback-line').textContent = '🎉 Sequenz abgeschlossen! Nochmal von vorne.';
-        seqIndex = 0;
-        renderSequence();
-        updateTarget();
-      }, 800);
-    } else {
-      updateTarget();
-      renderSequence();
+    totalAttempts++;
+    feedback("Gut gemacht!", "hit");
+    flashKey(midi, "key-hit");
+    
+    currentNoteStep++;
+    if (currentNoteStep >= SONGS[currentSongIdx].notes.length) {
+      currentNoteStep = 0;
+      feedback("🎉 Lied geschafft!", "hit");
     }
-  } else {
-    // MISS
-    misses++;
-    document.querySelector('#big-note').className = 'big-note miss';
-    const semitones = midi - (targetMidi || 0);
-    let hint = '';
-    if(semitones > 0) hint = `— ${semitones} Halbton${semitones>1?'e':''} zu hoch`;
-    else if(semitones < 0) hint = `— ${Math.abs(semitones)} Halbton${Math.abs(semitones)>1?'e':''} zu tief`;
-    document.querySelector('#feedback-line').textContent = `✗ ${noteName} gespielt, aber ${target} erwartet ${hint}`;
-    document.querySelector('#feedback-line').className = 'feedback-line wrong';
-    markSeqPill(seqIndex, 'miss');
-    setTimeout(() => { markSeqPill(seqIndex, 'current'); }, 400);
+    highlightTarget();
+  } else if (Math.abs(midi - targetMidi) < 12 && midi !== targetMidi) {
+      // Nur werten, wenn es kein Hintergrundgeräusch ist
+      // totalAttempts++; // Optional: Fehler zählen
   }
-  setTimeout(() => {
-    document.querySelector('#big-note').className = 'big-note';
-  }, 400);
-  updateScores();
+  updateStats();
 }
 
-function markSeqPill(idx, cls) {
-  const pill = document.querySelector(`#sp-${idx}`);
-  if(pill) pill.className = 'seq-pill ' + cls;
+function feedback(text, type) {
+  const f = document.getElementById('feedbackText');
+  f.textContent = text;
+  f.className = "feedback " + type;
 }
 
-// =====================
-// WAVEFORM DRAWING
-// =====================
-function drawWaveform(buffer) {
-  const canvas = document.querySelector('#waveform');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.clientWidth, H = canvas.clientHeight;
-  if(canvas.width !== W * devicePixelRatio) { canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio; ctx.scale(devicePixelRatio, devicePixelRatio); }
-  ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#1a1a1a';
-  ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = '#c9a84c';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  const step = Math.ceil(buffer.length / W);
-  const mid = H / 2;
-  for(let i = 0; i < W; i++) {
-    const v = buffer[i * step] * mid * 2.5;
-    if(i === 0) ctx.moveTo(i, mid - v);
-    else ctx.lineTo(i, mid - v);
+function flashKey(midi, cls) {
+  const el = document.getElementById(`midi-${midi}`);
+  if(el) {
+    el.classList.add(cls);
+    setTimeout(() => el.classList.remove(cls), 400);
   }
-  ctx.stroke();
 }
 
-// =====================
-// PIANO KEYBOARD
-// =====================
-const PIANO_KEYS = [];
-// 3 octaves: C3 to B5
-for(let oct=3; oct<=5; oct++) {
-  NOTE_NAMES.forEach((n,i) => {
-    PIANO_KEYS.push({note: n+oct, midi: noteNameToMidi(n+oct), type: n.includes('#')?'black':'white', name:n});
-  });
+function updateStats() {
+  document.getElementById('statHits').textContent = hits;
+  document.getElementById('statProg').textContent = `${currentNoteStep}/${SONGS[currentSongIdx].notes.length}`;
+  const acc = totalAttempts > 0 ? Math.round((hits/totalAttempts)*100) : 0;
+  document.getElementById('statAcc').textContent = acc + "%";
 }
 
-let whiteKeyEls = {};
-let blackKeyEls = {};
+// YIN-ähnliche Korrelation für Pitch
+function autoCorrelate(buf, sampleRate) {
+  let SIZE = buf.length;
+  let rms = 0;
+  for (let i=0; i<SIZE; i++) rms += buf[i]*buf[i];
+  if (Math.sqrt(rms/SIZE) < 0.01) return -1;
 
-function buildPiano() {
-  const piano = document.querySelector('#piano');
-  piano.innerHTML = '';
-  const whites = PIANO_KEYS.filter(k => k.type === 'white');
-  piano.style.width = (whites.length * 44) + 'px';
-  whites.forEach((k, wi) => {
-    const el = document.createElement('div');
-    el.className = 'wk';
-    el.id = 'pk-' + k.midi;
-    el.innerHTML = `<div class="key-label">${k.name}${k.note.slice(-1)}</div>`;
-    piano.appendChild(el);
-    whiteKeyEls[k.midi] = el;
-    k._wi = wi;
-  });
-  // Black keys
-  let wi2 = 0;
-  PIANO_KEYS.forEach((k) => {
-    if(k.type === 'white') { wi2++; return; }
-    const el = document.createElement('div');
-    el.className = 'bk';
-    el.id = 'pk-' + k.midi;
-    el.style.left = ((wi2 - 0.38) * 44 - 1) + 'px';
-    piano.appendChild(el);
-    blackKeyEls[k.midi] = el;
-  });
+  let r1 = 0, r2 = SIZE - 1, thres = 0.2;
+  for (let i=0; i<SIZE/2; i++) if (Math.abs(buf[i]) < thres) { r1 = i; break; }
+  for (let i=1; i<SIZE/2; i++) if (Math.abs(buf[SIZE-i]) < thres) { r2 = SIZE-i; break; }
+  buf = buf.slice(r1, r2);
+  SIZE = buf.length;
+
+  let c = new Float32Array(SIZE).fill(0);
+  for (let i=0; i<SIZE; i++)
+    for (let j=0; j<SIZE-i; j++)
+      c[i] = c[i] + buf[j]*buf[j+i];
+
+  let d=0; while (c[d]>c[d+1]) d++;
+  let maxval = -1, maxpos = -1;
+  for (let i=d; i<SIZE; i++) {
+    if (c[i] > maxval) {
+      maxval = c[i];
+      maxpos = i;
+    }
+  }
+  let T0 = maxpos;
+  return sampleRate / T0;
 }
 
-function clearKeyHighlights() {
-  document.querySelectorAll('.wk,.bk').forEach(el => {
-    el.classList.remove('active','hit-key','miss-key','target-key');
-  });
-}
-
-function highlightKey(noteName) {
-  document.querySelectorAll('.wk.active,.bk.active').forEach(el => el.classList.remove('active'));
-  const midi = noteNameToMidi(noteName);
-  if(midi === null) return;
-  const el = document.querySelector('#pk-' + midi);
-  if(el) el.classList.add('active');
-}
-
-function highlightTargetKey(noteName) {
-  document.querySelectorAll('.target-key').forEach(el => el.classList.remove('target-key'));
-  if(!noteName) return;
-  const midi = noteNameToMidi(noteName);
-  if(midi === null) return;
-  const el = document.querySelector('#pk-' + midi);
-  if(el) el.classList.add('target-key');
-}
-
-function flashKey(noteName, cls) {
-  const midi = noteNameToMidi(noteName);
-  if(midi === null) return;
-  const el = document.querySelector('#pk-' + midi);
-  if(!el) return;
-  el.classList.add(cls);
-  setTimeout(() => el.classList.remove(cls), 500);
-}
-
-// =====================
-// INIT
-// =====================
 buildPiano();
-setLesson(0);
 </script>
 </body>
 </html>
